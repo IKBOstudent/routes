@@ -9,7 +9,7 @@ Route::Route(int route_n, const vector<Stop>& stops){
     this->stops_ = stops;
 }
 
-int Route::route() const {
+int Route::route_num() const {
     return this->route_n_;
 }
 

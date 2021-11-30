@@ -14,7 +14,7 @@ class Route {
 public:
     Route(int route_n, const vector<Stop>& stops);
 
-    int route() const;
+    int route_num() const;
     const vector<Stop>& stops() const;
 
 private:
