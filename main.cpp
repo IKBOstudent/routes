@@ -55,6 +55,8 @@ void reading_table(const string& filename, vector<Route>& ROUTES) {
                 string name;
 
                 fin.get(a);
+                if (fin.eof()) break;
+
                 if (a == '|') {
                     fin.get(a);
                     while (a != ':') {
@@ -64,20 +66,71 @@ void reading_table(const string& filename, vector<Route>& ROUTES) {
 
                     double wait, from_prev;
                     fin >> from_prev >> wait;
-
                     Stop stop(name, wait, from_prev);
+
+                    fin.get(a);  // a = ':' or '|'
+
+                    if (a != '|') {
+                        while (true) {
+                            int change;
+                            fin >> change;
+                            stop.append_change(change);
+
+                            fin.get(a);  // a = ' ' or '|'
+                            if (a == '|') break;
+                        }
+                    }
                     stops.push_back(stop);
                 }
-                if (fin.eof())
-                    break;
+                if (fin.eof()) break;
             }
-
             Route route(route_num, stops);
             ROUTES.push_back(route);
         }
     }
 
     fin.close();
+}
+
+//double find_path_straight(int& route_i_A, int& stop_i_A, int& route_i_B, int& stop_i_B,
+//                          vector<Route>& ROUTES, double time) {
+//
+//    const vector<Stop>& stops = ROUTES[route_i_A].stops();
+//
+//    if (stop_i_A < stop_i_B) {
+//        // moving forward
+//
+//        for (int i = stop_i_A; i <= stop_i_B; ++i) {
+//            if (i != 0)
+//                total_time += stops[i].from_prev();
+//            if (i != stop_i_B)
+//                total_time += stops[i].wait();
+//        }
+//    }
+//    else {
+//        // moving backward
+//
+//        for (int i = stop_i_A; i >= stop_i_B; --i) {
+//            if (i != stops.size()-1)
+//                total_time += stops[i+1].from_prev();
+//            if (i != stop_i_B)
+//                total_time += stops[i].wait();
+//        }
+//    }
+//
+//
+//    return time;
+//}
+
+double find_path(int& route_i_A, int& stop_i_A, int& route_i_B, int& stop_i_B,
+              vector<Route>& ROUTES, double time) {
+
+    if (ROUTES[route_i_A].stops()[stop_i_A].transfer()){
+        // the point is a transfer
+
+    }
+
+    return time;
 }
 
 int main() {
@@ -95,7 +148,7 @@ int main() {
 //        getline(cin, A_name);
 //        getline(cin, B_name);
         A_name = "A";
-        B_name = "bs_1_2";
+        B_name = "ds_2";
         if (A_name == B_name) {
             cout << "invalid input\n";
             continue;
@@ -112,8 +165,7 @@ int main() {
                     Point_B.append(i, j);
             }
         }
-        if (Point_A.found_route() and Point_B.found_route())
-            break;
+        if (Point_A.found_route() and Point_B.found_route()) break;
         else
             cout << "no such name. repeat\n";
     }
@@ -131,36 +183,7 @@ int main() {
             int route_i_B = B_route.first;
             int stop_i_B = B_route.second;
 
-            // if route_nums are equal
-            if (route_i_A == route_i_B) {
-                // both routes are the same
-                const vector<Stop>& stops = ROUTES[route_i_A].stops();
-
-                if (stop_i_A < stop_i_B) {
-                    // moving forward
-
-                    for (int i = stop_i_A; i <= stop_i_B; ++i) {
-                        if (i != 0)
-                            total_time += stops[i].from_prev();
-                        if (i != stop_i_B)
-                            total_time += stops[i].wait();
-                    }
-                }
-                else {
-                    // moving backward
-
-                    for (int i = stop_i_A; i >= stop_i_B; --i) {
-                        if (i != stops.size()-1)
-                            total_time += stops[i+1].from_prev();
-                        if (i != stop_i_B)
-                            total_time += stops[i].wait();
-                    }
-                }
-            }
-            else {
-                // routes are different => 1 or more changes required
-
-            }
+            total_time = find_path(route_i_A, stop_i_A, route_i_B, stop_i_B, ROUTES, 0);
         }
     }
 

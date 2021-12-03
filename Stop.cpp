@@ -10,6 +10,10 @@ Stop::Stop(string name, double wait, double from_prev){
     this->from_prev_ = from_prev;
 }
 
+void Stop::append_change(int route) {
+    this->transfers_.push_back(route);
+}
+
 string Stop::name() const {
     return this->name_;
 }
@@ -20,4 +24,8 @@ double Stop::wait() const {
 
 double Stop::from_prev() const {
     return this->from_prev_;
+}
+
+bool Stop::transfer() const {
+    return !this->transfers_.empty();
 }
