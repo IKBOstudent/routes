@@ -4,42 +4,29 @@
 #include <fstream>
 
 #include <queue>
-
-struct Point {
-    void set_wait(double wait_time) {
-        this->wait_time_ = wait_time;
-    }
-
-    void set_name(string name) {
-        this->name_ = name;
-    }
-
-    void add_neighbour(const Point* new_neighbour) {
-        neighbours.push_back(new_neighbour);
-    }
-
-    string name_ = " ";
-    double wait_time_ = 0;
-    vector<const Point*> neighbours;
-};
+#include <map>
 
 using std::cout;
 using std::cin;
 using std::endl;
 using std::ifstream;
 using std::queue;
+using std::priority_queue;
+using std::map;
 
-void reading_table(const string& filename, vector<Route>& ROUTES, int& stops_count) {
+
+int main() {
+    string filename = "../routes.txt";
     ifstream fin;
     fin.open(filename);
-    // route format:
-    // ROUTE_num |STOP_name: FROM_PREV_time WAIT_time |STOP_name: ...
+    // ROUTE_num |STOP_name: FROM_PREV_time WAIT_time|
+
+    vector<Stop> STOPS;
 
     if (fin.is_open()) {
         while (!fin.eof()) {
             int route_num;
             fin >> route_num;
-            vector<Stop> stops;
 
             char a;
             fin.get(a);  // a = ' '
@@ -58,66 +45,115 @@ void reading_table(const string& filename, vector<Route>& ROUTES, int& stops_cou
 
                     double wait, from_prev;
                     fin >> from_prev >> wait;
-                    Stop stop(name, wait, from_prev);
+                    Stop stop(route_num, name, wait, from_prev);
+                    STOPS.push_back(stop);
 
                     fin.get(a);  // a = ':' or '|'
-                    stops.push_back(stop);
-                    ++stops_count;
                 }
                 if (fin.eof()) break;
             }
-            Route route(route_num, stops);
-            ROUTES.push_back(route);
+        }
+    }
+    fin.close();
+
+    auto N = STOPS.size();
+
+    bool new_route = false;
+    int prev_route = 0;
+    Stop* prev_stop = nullptr;
+    for (int i = 0; i < N; ++i){
+        if (STOPS[i].route() != prev_route){
+            if (prev_stop != nullptr)
+                prev_stop->set_end_point();
+            new_route = true;
+            prev_route = STOPS[i].route();
+        } else
+            new_route = false;
+        prev_stop = &STOPS[i];
+
+        if (new_route) {
+            STOPS[i].set_end_point();
         }
     }
 
-    fin.close();
-}
+    vector<vector<bool>> GRAPH(N, vector<bool>(N));
 
-void set_point(Point& point, vector<Route>& ROUTES){
+    for (int i = 0; i < N; ++i) {
+        STOPS[i].set_graph_index(i);
+        double total_time = STOPS[i].wait();
+
+        for (int j = 0; j < N; ++j) {
+
+            if ((STOPS[j].route() == STOPS[i].route() and abs(j - i) == 1)
+                or (STOPS[j].name() == STOPS[i].name() and i != j))
+                GRAPH[i][j] = true;
+            else
+                GRAPH[i][j] = false;
+
+//            cout << GRAPH[i][j] << " ";
+        }
+//        cout << endl;
+    }
+
+    string A_name, B_name;
+    Stop* start;
+    Stop* finish;
     while (true) {
-        string stop_name;
-        getline(cin, stop_name);
-        bool found = false;
-        for (auto & i : ROUTES) {
-            for (const auto & j : i.stops()) {
-                if (j.name() == stop_name) {
-                    found = true;
-                    point.set_name(stop_name);
-                    point.set_wait(j.wait());
-                }
+        getline(cin, A_name);
+        getline(cin, B_name);
+
+        bool found_A = false, found_B = false;
+        for (auto & i : STOPS) {
+            if (!found_A and i.name() == A_name) {
+                found_A = true;
+                start = &i;
+            }
+
+            if (!found_B and i.name() == B_name) {
+                found_B = true;
+                finish = &i;
             }
         }
 
-        if (found) return;
+        if (found_A and found_B) break;
         else cout << "invalid name\n";
     }
-}
 
-int main() {
-    string filename = "../routes.txt";
+    cout << start->name() << start->route() << " ";
+    cout << finish->name() << finish->route() << endl;
 
-    vector<Route> ROUTES;
-    int stops_count = 0;
-    // reading from file
-    reading_table(filename, ROUTES, stops_count);
 
-    Point A, B;
-    set_point(A, ROUTES);
-    set_point(B, ROUTES);
+    queue<Stop*> path;
+    path.push(start);
+    map<Stop*, Stop*> came_from;
+    came_from[start] = nullptr;
 
-    vector<vector<int>> GRAPH(stops_count, vector<int>(stops_count));
+    while (!path.empty()) {
+        Stop* current = path.front();
+        path.pop();
 
-    for (auto& i : GRAPH) {
-        for (auto j : i)
-            cout << j << " ";
-        cout << endl;
+        if (current->name() == B_name) break;
+
+        int i = current->graph_index();
+        for (int j = 0; j < N; j++) {
+            if (came_from.find(&STOPS[j]) == came_from.end()) {
+                if (GRAPH[i][j]) {
+                    path.push(&STOPS[j]);
+//                    cout << "next: " << STOPS[j].name() << " " << STOPS[j].route() << endl;
+                    came_from[&STOPS[j]] = current;
+                }
+            }
+        }
     }
 
-    for (int i = 0; i < stops_count; ++i) {
+    vector<Stop*> result;
+    Stop* current = finish;
+    result.push_back(finish);
+    while (current != start) {
+        current = came_from[current];
+        result.push_back(current);
     }
 
-    queue<Point> NODES;
 
 
 
