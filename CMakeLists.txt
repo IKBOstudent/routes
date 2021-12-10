@@ -3,4 +3,4 @@ project(routes)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(routes main.cpp Stop.cpp Stop.h Route.cpp Route.h)
+add_executable(routes main.cpp Stop.cpp Stop.h)
